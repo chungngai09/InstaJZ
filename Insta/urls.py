@@ -17,7 +17,8 @@ Including another URLconf #app level create a urls.py then use project-level to 
 from django.contrib import admin
 from django.urls import include, path # then we can use include
 
+from Insta.views import HelloWorld
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('insta/', include('Insta.urls')),# go tp find app-level urls
+   path('', HelloWorld.as_view(), name='helloworld'), #as_view funvtion是继承TemplateView
 ]

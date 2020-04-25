@@ -1,3 +1,4 @@
+#python manage.py 类似python tool , django-admin
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
