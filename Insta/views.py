@@ -1,9 +1,173 @@
+from annoying.decorators import ajax_request
+
 from django.shortcuts import render
 
 # Create your views here.
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView ,ListView, DetailView
+
+#高级修改的import
+from django.views.generic.edit import CreateView,DeleteView,UpdateView
+
+from django.urls import reverse , reverse_lazy
+
+from Insta.models import Post, Like , InstaUser , UserConnection , Comment
+
+from Insta.forms import CustomUserCreationForm
+
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 class HelloWorld (TemplateView): #继承
     #use default attribute
     template_name = 'test.html'
     # done
+
+class PostsView(ListView):
+    #ListView上多加了一个model
+    model = Post
+    #同样需要template
+    template_name = 'index.html'
+    # filter only see follering. method, get_queryset(self),查询，返回的是给post的list。default是返回所有post
+    #所以我们要的是我们需要的post
+    def get_queryset(self):
+        current_user = self.request.user
+        following = set()
+        for conn in UserConnection.objects.filter(creator=current_user).select_related('following'):
+            following.add(conn.following)
+        return Post.objects.filter(author__in=following)
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = 'post_detail.html'
+
+class PostCreateView(LoginRequiredMixin,CreateView): #需要先满足前面的mixins才能createView
+    model = Post
+    template_name = 'post_create.html'
+    #有个新的需要添加
+    #ID 自动增长不需要
+    fields = '__all__'  #特殊语法。选所有fields
+    #如果没登录要去
+    login_url = 'login'
+
+class PostUpdateView(UpdateView):
+    model = Post
+    template_name = 'post_update.html'
+    # 可以更新的内容：标题
+    fields = ['title'] 
+
+class PostDeleteView(DeleteView):
+    model = Post
+    template_name = 'post_delete.html'
+    #不能用reverse，不能一边删除一边跳转
+    #删除功能都用reverse_lazy
+    success_url = reverse_lazy("posts")
+
+# user createview and a form import from django.contrib.auth.forms
+class SignUp(CreateView):
+    form_class = CustomUserCreationForm
+    template_name = 'signup.html'
+    success_url = reverse_lazy("login")
+
+#profile
+class UserDetailView(DetailView):
+    model = InstaUser
+    template_name = 'user_detail.html'
+
+class EditProfile(LoginRequiredMixin, UpdateView):
+    model = InstaUser
+    template_name = 'edit_profile.html'
+    fields = ['profile_pic', 'username']
+    login_url = 'login'
+
+@ajax_request
+def toggleFollow(request):
+    current_user = InstaUser.objects.get(pk=request.user.pk)
+    follow_user_pk = request.POST.get('follow_user_pk')
+    follow_user = InstaUser.objects.get(pk=follow_user_pk)
+
+    try:
+        if current_user != follow_user:
+            if request.POST.get('type') == 'follow':
+                connection = UserConnection(creator=current_user, following=follow_user)
+                connection.save()
+            elif request.POST.get('type') == 'unfollow':
+                UserConnection.objects.filter(creator=current_user, following=follow_user).delete()
+            result = 1
+        else:
+            result = 0
+    except Exception as e:
+        print(e)
+        result = 0
+
+    return {
+        'result': result,
+        'type': request.POST.get('type'),
+        'follow_user_pk': follow_user_pk
+    }
+    
+@ajax_request
+def addLike(request):
+    post_pk = request.POST.get('post_pk')
+    post = Post.objects.get(pk=post_pk)
+    try:
+        like = Like(post=post, user=request.user)
+        # 存到db
+        like.save()
+        result = 1
+    except Exception as e:
+        like = Like.objects.get(post=post, user=request.user)
+        like.delete()
+        result = 0
+
+    return {
+        'result': result,
+        'post_pk': post_pk
+    }
+
+@ajax_request
+def addLike(request):
+    post_pk = request.POST.get('post_pk')
+    post = Post.objects.get(pk=post_pk)
+    try:
+        like = Like(post=post, user=request.user)
+        like.save()
+        result = 1
+    except Exception as e:
+        like = Like.objects.get(post=post, user=request.user)
+        like.delete()
+        result = 0
+
+    return {
+        'result': result,
+        'post_pk': post_pk
+    }
+
+
+@ajax_request
+def addComment(request):
+    comment_text = request.POST.get('comment_text')
+    post_pk = request.POST.get('post_pk')
+    post = Post.objects.get(pk=post_pk)
+    commenter_info = {}
+
+    try:
+        comment = Comment(comment=comment_text, user=request.user, post=post)
+        comment.save()
+
+        username = request.user.username
+
+        commenter_info = {
+            'username': username,
+            'comment_text': comment_text
+        }
+
+        result = 1
+    except Exception as e:
+        print(e)
+        result = 0
+
+    return {
+        'result': result,
+        'post_pk': post_pk,
+        'commenter_info': commenter_info
+    }
+

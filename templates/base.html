@@ -1,0 +1,39 @@
+<html>
+    <!-- template languague load static folder里的 -->
+    {% load static %}
+    <head>
+        <meta charset="utf-8">
+        <!-- 关于手机app 尺寸问题-->
+        <meta name= "viewport" content="width=device-width, initial-scale=1">
+        <!-- 网页title -->
+        <title>JZ Insta</title>
+        <!-- 页面连接的css -->
+        <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'vendor/font-awesome-4.6.3/css/font-awesome.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    </head>
+    <body>
+        <!-- 相当于直接把header内容拷贝过来 -->
+        {% include 'header.html' %}
+        
+        <!-- class的内容是给css弄的 ，在partial里做美化-->
+        <div class="content-wrapper">
+            <!-- 同理css处理 -->
+            <div class="container">
+                {% block content %}
+                <!-- 内容可以从具体的每一个页面来 -->
+                {% endblock content%}
+            </div>
+        </div>
+
+        <script type="text/javascript" src="{% static 'js/jquery-3.1.0.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/ajax-csrf-auth.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/index.js' %}"></script>
+
+        <!-- 定义每个页面不同的脚本 -->
+        {% block extrascript %}
+        {% endblock %}
+
+    </body>
+</html>

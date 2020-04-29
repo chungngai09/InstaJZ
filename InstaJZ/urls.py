@@ -17,7 +17,13 @@ Including another URLconf #app level create a urls.py then use project-level to 
 from django.contrib import admin
 from django.urls import include, path # then we can use include
 
+from Insta.views import SignUp
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('insta/', include('Insta.urls')),# go tp find app-level urls
+    # add url , 原为 insta/
+    path('', include('Insta.urls')),# go tp find app-level urls
+    path('auth/', include('django.contrib.auth.urls')), #当有路径开头auth，交给django.contrib.auth下面的urls来处理
+    path('auth/signup/', SignUp.as_view(), name = 'signup'),
+    
 ]
